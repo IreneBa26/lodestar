@@ -1,7 +1,5 @@
-import {createChainForkConfig, defaultChainConfig} from "@lodestar/config";
-import {ForkName, ForkPostCapella, ForkPostDeneb} from "@lodestar/params";
-import {computeStartSlotAtEpoch, signedBlockToSignedHeader} from "@lodestar/state-transition";
-import {SignedBeaconBlock, deneb, ssz} from "@lodestar/types";
+import {ForkName} from "@lodestar/params";
+import {signedBlockToSignedHeader} from "@lodestar/state-transition";
 import {toRootHex} from "@lodestar/utils";
 import {beforeEach, describe, expect, it} from "vitest";
 import {
@@ -13,94 +11,20 @@ import {
 import {ChainEvent, ChainEventEmitter} from "../../../../src/chain/emitter.js";
 import {SeenBlockInputCache} from "../../../../src/chain/seenCache/seenBlockInput.js";
 import {Clock} from "../../../../src/util/clock.js";
+import {
+  CAPELLA_FORK_EPOCH,
+  DENEB_FORK_EPOCH,
+  buildBlockAndBlobsTestSet,
+  buildBlockTestSet,
+  buildParentAndChildBlockTestSet,
+  config,
+} from "../../../utils/blocksAndData.js";
 import {testLogger} from "../../../utils/logger.js";
 
 describe("SeenBlockInputCache", () => {
   let cache: SeenBlockInputCache;
   let abortController: AbortController;
   let chainEvents: ChainEventEmitter;
-
-  const CAPELLA_FORK_EPOCH = 0;
-  const DENEB_FORK_EPOCH = 1;
-  const ELECTRA_FORK_EPOCH = 2;
-  const FULU_FORK_EPOCH = 3;
-  const config = createChainForkConfig({
-    ...defaultChainConfig,
-    CAPELLA_FORK_EPOCH,
-    DENEB_FORK_EPOCH,
-    ELECTRA_FORK_EPOCH,
-    FULU_FORK_EPOCH,
-  });
-
-  const slots: Record<ForkPostCapella, number> = {
-    capella: computeStartSlotAtEpoch(CAPELLA_FORK_EPOCH),
-    deneb: computeStartSlotAtEpoch(DENEB_FORK_EPOCH),
-    electra: computeStartSlotAtEpoch(ELECTRA_FORK_EPOCH),
-    fulu: computeStartSlotAtEpoch(FULU_FORK_EPOCH),
-  };
-
-  type BlockTestSet<F extends ForkPostCapella> = {
-    block: SignedBeaconBlock<F>;
-    blockRoot: Uint8Array;
-    rootHex: string;
-  };
-
-  function buildBlockTestSet<F extends ForkPostCapella = ForkPostCapella>(forkName: F): BlockTestSet<F> {
-    const block = ssz[forkName].SignedBeaconBlock.defaultValue();
-    block.message.slot = slots[forkName];
-    const blockRoot = ssz[forkName].BeaconBlock.hashTreeRoot(block.message as any);
-    const rootHex = toRootHex(blockRoot);
-    return {
-      block,
-      blockRoot,
-      rootHex,
-    };
-  }
-
-  type ParentAndChildBlockTestSet<F extends ForkPostCapella> = {
-    parentBlock: SignedBeaconBlock<F>;
-    parentBlockRoot: Uint8Array;
-    parentRootHex: string;
-    childBlock: SignedBeaconBlock<F>;
-    childBlockRoot: Uint8Array;
-    childRootHex: string;
-  };
-  function buildParentAndChildBlockTestSet<F extends ForkPostCapella = ForkPostCapella>(
-    forkName: F
-  ): ParentAndChildBlockTestSet<F> {
-    const {block: parentBlock, blockRoot: parentBlockRoot, rootHex: parentRootHex} = buildBlockTestSet(forkName);
-    const {block: childBlock, blockRoot: childBlockRoot, rootHex: childRootHex} = buildBlockTestSet(forkName);
-    childBlock.message.slot = parentBlock.message.slot + 1;
-    childBlock.message.parentRoot = parentBlockRoot;
-    return {
-      parentBlock,
-      parentBlockRoot,
-      parentRootHex,
-      childBlock,
-      childBlockRoot,
-      childRootHex,
-    };
-  }
-
-  type BlockAndBlobTestSet<F extends ForkPostDeneb = ForkPostDeneb> = BlockTestSet<F> & {
-    blobSidecar: deneb.BlobSidecar;
-  };
-  function buildBlockAndBlobTestSet(forkName: ForkPostDeneb): BlockAndBlobTestSet<ForkPostDeneb> {
-    const {block, blockRoot, rootHex} = buildBlockTestSet<ForkPostDeneb>(forkName);
-    const commitment = Buffer.alloc(48, 0x77);
-    block.message.body.blobKzgCommitments = [commitment];
-    const signedBlockHeader = signedBlockToSignedHeader(config, block);
-    const blobSidecar = ssz[forkName].BlobSidecar.defaultValue();
-    blobSidecar.signedBlockHeader = signedBlockHeader;
-    blobSidecar.kzgCommitment = commitment;
-
-    return {
-      block,
-      blockRoot,
-      rootHex,
-      blobSidecar,
-    };
-  }
 
   const logger = testLogger();
   beforeEach(() => {
@@ -355,10 +279,10 @@ describe("SeenBlockInputCache", () => {
       ).not.toThrow();
     });
     it("should return the correct BlockInput for a BlockInput created by blob", () => {
-      const {block, blobSidecar} = buildBlockAndBlobTestSet(ForkName.deneb);
+      const {block, blobSidecars} = buildBlockAndBlobsTestSet(ForkName.deneb, 1);
 
       const blockInput1 = cache.getByBlob({
-        blobSidecar,
+        blobSidecar: blobSidecars[0],
         source: BlockInputSource.gossip,
         seenTimestampSec: Date.now(),
       });
@@ -373,26 +297,26 @@ describe("SeenBlockInputCache", () => {
   });
   describe("getByBlob()", () => {
     it("should return a new BlockInput for a new block root", () => {
-      const {rootHex, blobSidecar} = buildBlockAndBlobTestSet(ForkName.electra);
+      const {rootHex, blobSidecars} = buildBlockAndBlobsTestSet(ForkName.electra, 1);
       expect(cache.get(rootHex)).toBeUndefined();
       const blockInput = cache.getByBlob({
-        blobSidecar,
+        blobSidecar: blobSidecars[0],
         source: BlockInputSource.gossip,
         seenTimestampSec: Date.now(),
       });
       expect(cache.get(rootHex)).toBe(blockInput);
     });
     it("should return the same BlockInput for an existing block root", () => {
-      const {rootHex, blobSidecar} = buildBlockAndBlobTestSet(ForkName.electra);
+      const {rootHex, blobSidecars} = buildBlockAndBlobsTestSet(ForkName.electra, 1);
 
       const blockInput1 = cache.getByBlob({
-        blobSidecar,
+        blobSidecar: blobSidecars[0],
         source: BlockInputSource.gossip,
         seenTimestampSec: Date.now(),
       });
       expect(cache.get(rootHex)).toBe(blockInput1);
       const blockInput2 = cache.getByBlob({
-        blobSidecar,
+        blobSidecar: blobSidecars[0],
         source: BlockInputSource.gossip,
         seenTimestampSec: Date.now(),
       });
@@ -407,14 +331,16 @@ describe("SeenBlockInputCache", () => {
       });
       expect(isBlockInputPreDeneb(blockInput)).toBeTruthy();
 
-      const {blobSidecar} = buildBlockAndBlobTestSet(ForkName.electra);
+      const {blobSidecars} = buildBlockAndBlobsTestSet(ForkName.electra, 1);
+      const blobSidecar = blobSidecars[0];
       blobSidecar.signedBlockHeader = signedBlockToSignedHeader(config, block);
       expect(() =>
         cache.getByBlob({blobSidecar, source: BlockInputSource.gossip, seenTimestampSec: Date.now()})
       ).toThrow();
     });
     it("should add blob to an existing BlockInput", () => {
-      const {block, blobSidecar} = buildBlockAndBlobTestSet(ForkName.electra);
+      const {block, blobSidecars} = buildBlockAndBlobsTestSet(ForkName.electra, 1);
+      const blobSidecar = blobSidecars[0];
 
       const blockInput1 = cache.getByBlock({
         block,
@@ -431,18 +357,18 @@ describe("SeenBlockInputCache", () => {
       expect(blockInput2.getBlobs()[0]).toBe(blobSidecar);
     });
     it("should not throw for a BlockInput with an existing blob", () => {
-      const {rootHex, blobSidecar} = buildBlockAndBlobTestSet(ForkName.electra);
+      const {rootHex, blobSidecars} = buildBlockAndBlobsTestSet(ForkName.electra, 1);
 
       expect(cache.get(rootHex)).toBeUndefined();
       const blockInput = cache.getByBlob({
-        blobSidecar,
+        blobSidecar: blobSidecars[0],
         source: BlockInputSource.gossip,
         seenTimestampSec: Date.now(),
       });
       expect(cache.get(rootHex)).toBe(blockInput);
       expect(() =>
         blockInput.addBlob({
-          blobSidecar,
+          blobSidecar: blobSidecars[0],
           source: BlockInputSource.gossip,
           seenTimestampSec: Date.now(),
           blockRootHex: rootHex,
@@ -450,19 +376,19 @@ describe("SeenBlockInputCache", () => {
       ).toThrow();
       expect(() =>
         cache.getByBlob({
-          blobSidecar,
+          blobSidecar: blobSidecars[0],
           source: BlockInputSource.gossip,
           seenTimestampSec: Date.now(),
         })
       ).not.toThrow();
     });
     it("should throw for an existing blob with opts.throwGossipErrorIfAlreadyKnown", () => {
-      const {rootHex, blobSidecar} = buildBlockAndBlobTestSet(ForkName.electra);
+      const {rootHex, blobSidecars} = buildBlockAndBlobsTestSet(ForkName.electra, 1);
 
       expect(cache.get(rootHex)).toBeUndefined();
       const blockInput = cache.getByBlob(
         {
-          blobSidecar,
+          blobSidecar: blobSidecars[0],
           source: BlockInputSource.gossip,
           seenTimestampSec: Date.now(),
         },
@@ -472,7 +398,7 @@ describe("SeenBlockInputCache", () => {
       expect(() =>
         cache.getByBlob(
           {
-            blobSidecar,
+            blobSidecar: blobSidecars[0],
             source: BlockInputSource.gossip,
             seenTimestampSec: Date.now(),
           },

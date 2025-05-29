@@ -1,8 +1,4 @@
-import {createChainForkConfig, defaultChainConfig} from "@lodestar/config";
-import {ForkName, ForkPostCapella, ForkPostDeneb} from "@lodestar/params";
-import {computeStartSlotAtEpoch, signedBlockToSignedHeader} from "@lodestar/state-transition";
-import {SignedBeaconBlock, deneb, ssz} from "@lodestar/types";
-import {toRootHex} from "@lodestar/utils";
+import {ForkName} from "@lodestar/params";
 import {describe, expect, it} from "vitest";
 import {
   AddBlob,
@@ -12,67 +8,7 @@ import {
   CreateBlockInputMeta,
   ForkBlobsDA,
 } from "../../../../src/chain/blocks/blockInput/index.js";
-
-const CAPELLA_FORK_EPOCH = 0;
-const DENEB_FORK_EPOCH = 1;
-const ELECTRA_FORK_EPOCH = 2;
-const FULU_FORK_EPOCH = 3;
-const config = createChainForkConfig({
-  ...defaultChainConfig,
-  CAPELLA_FORK_EPOCH,
-  DENEB_FORK_EPOCH,
-  ELECTRA_FORK_EPOCH,
-  FULU_FORK_EPOCH,
-});
-
-const slots: Record<ForkPostCapella, number> = {
-  capella: computeStartSlotAtEpoch(CAPELLA_FORK_EPOCH),
-  deneb: computeStartSlotAtEpoch(DENEB_FORK_EPOCH),
-  electra: computeStartSlotAtEpoch(ELECTRA_FORK_EPOCH),
-  fulu: computeStartSlotAtEpoch(FULU_FORK_EPOCH),
-};
-
-type BlockTestSet<F extends ForkPostCapella> = {
-  block: SignedBeaconBlock<F>;
-  blockRoot: Uint8Array;
-  rootHex: string;
-};
-function buildBlockTestSet<F extends ForkPostCapella = ForkPostCapella>(forkName: F): BlockTestSet<F> {
-  const block = ssz[forkName].SignedBeaconBlock.defaultValue();
-  block.message.slot = slots[forkName];
-  const blockRoot = ssz[forkName].BeaconBlock.hashTreeRoot(block.message as any);
-  const rootHex = toRootHex(blockRoot);
-  return {
-    block,
-    blockRoot,
-    rootHex,
-  };
-}
-
-type BlockAndBlobTestSet<F extends ForkPostDeneb = ForkPostDeneb> = BlockTestSet<F> & {
-  blobSidecars: deneb.BlobSidecars;
-};
-function buildBlockAndBlobsTestSet(forkName: ForkPostDeneb, numberOfBlobs: number): BlockAndBlobTestSet<ForkPostDeneb> {
-  const {block, blockRoot, rootHex} = buildBlockTestSet<ForkPostDeneb>(forkName);
-  const commitments = Array.from({length: numberOfBlobs}, () => Buffer.alloc(48, 0x77));
-  block.message.body.blobKzgCommitments = commitments;
-  const signedBlockHeader = signedBlockToSignedHeader(config, block);
-  const blobSidecars: deneb.BlobSidecars = [];
-  for (const kzgCommitment of commitments) {
-    const blobSidecar = ssz[forkName].BlobSidecar.defaultValue();
-    blobSidecar.index = blobSidecars.length;
-    blobSidecar.signedBlockHeader = signedBlockHeader;
-    blobSidecar.kzgCommitment = kzgCommitment;
-    blobSidecars.push(blobSidecar);
-  }
-
-  return {
-    block,
-    blockRoot,
-    rootHex,
-    blobSidecars,
-  };
-}
+import {buildBlockAndBlobsTestSet} from "../../../utils/blocksAndData.js";
 
 const testCases: {name: string; blobCount: number; blobsBeforeBlock: number}[] = [
   {
