@@ -2,6 +2,13 @@ import {toRootHex} from "./bytes/index.js";
 import {ETH_TO_WEI} from "./ethConversion.js";
 
 /**
+ * Format an array for pretty logging
+ */
+export function prettyPrintArray(arr: (string | number)[]): string {
+  return `[ ${arr.join(", ")} ]`;
+}
+
+/**
  * Format bytes as `0x1234…1234`
  * 4 bytes can represent 4294967296 values, so the chance of collision is low
  */
