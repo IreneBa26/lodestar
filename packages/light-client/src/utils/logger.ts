@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/suspicious/noConsole: We intentionally use `console` in functions here */
 // biome-ignore lint/suspicious/noExplicitAny: We need `any` type explicitly
 export type LogHandler = (message: string, context?: any, error?: Error) => void;
 

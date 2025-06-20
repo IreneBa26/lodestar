@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/suspicious/noTemplateCurlyInString: Metrics uses those curtly strings for dynamic templates */
 import {BlockInputSource} from "../../chain/blocks/blockInput/index.js";
 import {BlobsSource, BlockSource} from "../../chain/blocks/types.js";
 import {JobQueueItemType} from "../../chain/bls/index.js";
