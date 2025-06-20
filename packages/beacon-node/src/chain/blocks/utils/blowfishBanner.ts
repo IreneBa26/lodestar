@@ -1,3 +1,4 @@
+// biome-ignore lint/complexity/noUselessStringRaw: We need to use String.raw for ascii art to preserve formatting
 export const DENEB_BLOWFISH_BANNER = String.raw`
                                                                                  
                                   :-.                                            
