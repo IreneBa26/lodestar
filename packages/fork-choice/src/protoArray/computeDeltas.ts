@@ -4,7 +4,7 @@ import {ProtoArrayError, ProtoArrayErrorCode} from "./errors.js";
 import {VoteTracker} from "./interface.js";
 
 // reuse arrays to avoid memory reallocation and gc
-const deltas = new Array<number>();
+const deltas: number[] = [];
 
 /**
  * Returns a list of `deltas`, where there is one delta for each of the indices in `indices`

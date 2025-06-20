@@ -6,7 +6,7 @@ import {isInInactivityLeak} from "../util/index.js";
 /**
  * This data is reused and never gc.
  */
-const inactivityScoresArr = new Array<number>();
+const inactivityScoresArr: number[] = [];
 
 /**
  * Mutates `inactivityScores` from pre-calculated validator flags.

@@ -208,24 +208,24 @@ export interface EpochTransitionCache {
 // reuse arrays to avoid memory reallocation and gc
 // WARNING: this is not async safe
 /** WARNING: reused, never gc'd */
-const isActivePrevEpoch = new Array<boolean>();
+const isActivePrevEpoch: boolean[] = [];
 /** WARNING: reused, never gc'd */
-const isActiveCurrEpoch = new Array<boolean>();
+const isActiveCurrEpoch: boolean[] = [];
 /** WARNING: reused, never gc'd */
-const isActiveNextEpoch = new Array<boolean>();
+const isActiveNextEpoch: boolean[] = [];
 /** WARNING: reused, never gc'd, from altair this is empty array */
-const proposerIndices = new Array<number>();
+const proposerIndices: number[] = [];
 /** WARNING: reused, never gc'd, from altair this is empty array */
-const inclusionDelays = new Array<number>();
+const inclusionDelays: number[] = [];
 /** WARNING: reused, never gc'd */
-const flags = new Array<number>();
+const flags: number[] = [];
 /** WARNING: reused, never gc'd */
-const nextEpochShufflingActiveValidatorIndices = new Array<number>();
+const nextEpochShufflingActiveValidatorIndices: number[] = [];
 /** WARNING: reused, never gc'd */
-const isCompoundingValidatorArr = new Array<boolean>();
+const isCompoundingValidatorArr: boolean[] = [];
 
-const previousEpochParticipation = new Array<number>();
-const currentEpochParticipation = new Array<number>();
+const previousEpochParticipation: number[] = [];
+const currentEpochParticipation: number[] = [];
 
 export function beforeProcessEpoch(
   state: CachedBeaconStateAllForks,

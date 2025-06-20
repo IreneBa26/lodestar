@@ -12,7 +12,7 @@ import {getRewardsAndPenaltiesAltair} from "./getRewardsAndPenalties.js";
 /**
  * This data is reused and never gc.
  */
-const balances = new Array<number>();
+const balances: number[] = [];
 /**
  * Iterate over all validator and compute rewards and penalties to apply to balances.
  *

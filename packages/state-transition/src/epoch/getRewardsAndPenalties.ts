@@ -31,8 +31,8 @@ type RewardPenaltyItem = {
 /**
  * This data is reused and never gc.
  */
-const rewards = new Array<number>();
-const penalties = new Array<number>();
+const rewards: number[] = [];
+const penalties: number[] = [];
 /**
  * An aggregate of getFlagIndexDeltas and getInactivityPenaltyDeltas that loop through process.flags 1 time instead of 4.
  *
