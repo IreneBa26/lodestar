@@ -43,7 +43,7 @@ export function isPlainObject(o: unknown): o is object {
   if (isObjectObject(prot) === false) return false;
 
   // If constructor does not have an Object-specific method
-  if (Object.hasOwn(prot, "isPrototypeOf") === false) {
+  if (Object.prototype.hasOwnProperty.call(prot, "isPrototypeOf") === false) {
     return false;
   }
 
@@ -89,7 +89,7 @@ export function objectToExpectedCase<T extends Record<string, unknown> | Record<
     const newObj: Record<string, unknown> = {};
     for (const name of Object.getOwnPropertyNames(obj)) {
       const newName = toExpectedCase(name, expectedCase);
-      if (newName !== name && Object.hasOwn(obj, newName)) {
+      if (newName !== name && Object.prototype.hasOwnProperty.call(obj, newName)) {
         throw new Error(`object already has a ${newName} property`);
       }
 
