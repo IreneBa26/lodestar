@@ -27,7 +27,7 @@ export type ELRequestHandler<Params = unknown[], Response = unknown> = (
   payload: JsonRpcRequestOrBatch<Params>
 ) => Promise<JsonRpcResponseOrBatch<Response> | undefined>;
 
-// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+// biome-ignore lint/suspicious/noExplicitAny: We need `any` type explicitly
 export type ELRequestHandlerAny = ELRequestHandler<any, any>;
 
 /**

@@ -148,7 +148,7 @@ export class NetworkCore implements INetworkCore {
 
     // Bind discv5's ENR to local metadata
     // resolve circular dependency by setting `discv5` variable after the peer manager is instantiated
-    // biome-ignore lint/style/useConst: <explanation>
+    // biome-ignore lint/style/useConst: Ww will initialize the `discv5` later
     let discv5: Discv5Worker | undefined;
     const onMetadataSetValue = function onMetadataSetValue(key: string, value: Uint8Array): void {
       discv5?.setEnrValue(key, value).catch((e) => logger.error("error on setEnrValue", {key}, e));

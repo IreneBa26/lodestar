@@ -80,7 +80,7 @@ export function matchBlockWithBlobs(
 
       let blobSidecar: deneb.BlobSidecar;
       while (
-        // biome-ignore lint/suspicious/noAssignInExpressions: <explanation>
+        // biome-ignore lint/suspicious/noAssignInExpressions: We need this assignment to keep old code
         (blobSidecar = allBlobSidecars[blobSideCarIndex])?.signedBlockHeader.message.slot === block.data.message.slot
       ) {
         blobSidecars.push(blobSidecar);

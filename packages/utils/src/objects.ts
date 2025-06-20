@@ -43,7 +43,7 @@ export function isPlainObject(o: unknown): o is object {
   if (isObjectObject(prot) === false) return false;
 
   // If constructor does not have an Object-specific method
-  if (Object.prototype.hasOwnProperty.call(prot, "isPrototypeOf") === false) {
+  if (Object.hasOwn(prot, "isPrototypeOf") === false) {
     return false;
   }
 
@@ -61,7 +61,7 @@ export function isEmptyObject(value: unknown): boolean {
  *
  * Inspired on lodash.mapValues, see https://lodash.com/docs/4.17.15#mapValues
  */
-// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+// biome-ignore lint/suspicious/noExplicitAny: We need `any` type explicitly
 export function mapValues<T extends {[K: string]: any}, R>(
   obj: T,
   iteratee: (value: T[keyof T], key: keyof T) => R
@@ -89,7 +89,7 @@ export function objectToExpectedCase<T extends Record<string, unknown> | Record<
     const newObj: Record<string, unknown> = {};
     for (const name of Object.getOwnPropertyNames(obj)) {
       const newName = toExpectedCase(name, expectedCase);
-      if (newName !== name && Object.prototype.hasOwnProperty.call(obj, newName)) {
+      if (newName !== name && Object.hasOwn(obj, newName)) {
         throw new Error(`object already has a ${newName} property`);
       }
 

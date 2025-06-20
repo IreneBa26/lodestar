@@ -8,7 +8,7 @@ import {JobQueueOpts, QueueMetrics, QueueType, defaultQueueOpts} from "./options
  * Supports a single itemProcessor, for arbitrary functions use the JobFnQueue
  */
 
-// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+// biome-ignore lint/suspicious/noExplicitAny: We need `any` type explicitly
 export class JobItemQueue<Args extends any[], R> {
   private readonly opts: Required<JobQueueOpts>;
   /**

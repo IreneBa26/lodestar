@@ -39,7 +39,7 @@ export const fulu = typesByFork[ForkName.fulu];
  * A type of union of forks must accept as any parameter the UNION of all fork types.
  */
 
-// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+// biome-ignore lint/suspicious/noExplicitAny: We need `any` type explicitly
 type UnionSSZForksTypeOf<UnionOfForkTypes extends ContainerType<any>> = CompositeType<
   ValueOf<UnionOfForkTypes>,
   CompositeView<UnionOfForkTypes>,

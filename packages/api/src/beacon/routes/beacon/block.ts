@@ -222,7 +222,7 @@ export type Endpoints = {
   >;
 };
 
-// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+// biome-ignore lint/suspicious/noExplicitAny: We need `any` type explicitly
 const blockIdOnlyReq: RequestCodec<Endpoint<"GET", {blockId: BlockId}, {params: {block_id: string}}, any, any>> = {
   writeReq: ({blockId}) => ({params: {block_id: blockId.toString()}}),
   parseReq: ({params}) => ({blockId: params.block_id}),

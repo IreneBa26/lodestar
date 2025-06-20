@@ -78,7 +78,7 @@ describe("getCommonAncestor", () => {
 
   for (const {nodeA, nodeB, ancestor} of testCases) {
     it(`${nodeA} & ${nodeB} -> ${ancestor}`, () => {
-      // biome-ignore lint/style/noNonNullAssertion: <explanation>
+      // biome-ignore lint/style/noNonNullAssertion: Need to assign without null check
       const ancestorNode = fc.getCommonAncestor(fc.getNode(nodeA)!, fc.getNode(nodeB)!);
       if (ancestor) {
         expect(ancestorNode?.blockRoot).toBe(ancestor);

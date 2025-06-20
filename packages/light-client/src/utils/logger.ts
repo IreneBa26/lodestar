@@ -1,4 +1,4 @@
-// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+// biome-ignore lint/suspicious/noExplicitAny: We need `any` type explicitly
 export type LogHandler = (message: string, context?: any, error?: Error) => void;
 
 export type ILcLogger = {

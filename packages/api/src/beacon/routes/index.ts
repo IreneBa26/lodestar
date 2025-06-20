@@ -8,6 +8,8 @@ import {Endpoints as NodeEndpoints} from "./node.js";
 import {Endpoints as ProofEndpoints} from "./proof.js";
 import {Endpoints as ValidatorEndpoints} from "./validator.js";
 
+// Import all routes from the beacon module and other modules
+
 import * as beacon from "./beacon/index.js";
 import * as config from "./config.js";
 import * as debug from "./debug.js";
