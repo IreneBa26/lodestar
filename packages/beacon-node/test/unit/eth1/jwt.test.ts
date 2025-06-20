@@ -4,7 +4,7 @@ import {decodeJwtToken, encodeJwtToken} from "../../../src/eth1/provider/jwt.js"
 describe("ExecutionEngine / jwt", () => {
   it("encode/decode correctly", () => {
     const jwtSecret = Buffer.from(Array.from({length: 32}, () => Math.round(Math.random() * 255)));
-    const claim = {iat: Math.floor(new Date().getTime() / 1000)};
+    const claim = {iat: Math.floor(Date.now() / 1000)};
     const token = encodeJwtToken(claim, jwtSecret);
     const decoded = decodeJwtToken(token, jwtSecret);
     expect(decoded).toEqual(claim);
@@ -12,7 +12,7 @@ describe("ExecutionEngine / jwt", () => {
 
   it("encode/decode correctly with id and clv", () => {
     const jwtSecret = Buffer.from(Array.from({length: 32}, () => Math.round(Math.random() * 255)));
-    const claim = {iat: Math.floor(new Date().getTime() / 1000), id: "4ac0", clv: "Lodestar/v0.36.0/80c248bb"};
+    const claim = {iat: Math.floor(Date.now() / 1000), id: "4ac0", clv: "Lodestar/v0.36.0/80c248bb"};
     const token = encodeJwtToken(claim, jwtSecret);
     const decoded = decodeJwtToken(token, jwtSecret);
     expect(decoded).toEqual(claim);
