@@ -82,6 +82,10 @@ export enum SyncChainStatus {
   Error = "Error",
 }
 
+// this global chain id is used to identify the chain over time, increase it every time a new chain is created
+// a chain type could be Finalized or Head, so it should be appended with this id to make the log unique
+let nextChainId = 0;
+
 /**
  * Dynamic target sync chain. Peers with multiple targets but with the same syncType are added
  * through the `addPeer()` hook.
@@ -145,7 +149,7 @@ export class SyncChain {
     this.custodyConfig = modules.custodyConfig;
     this.logger = modules.logger;
     this.metrics = modules.metrics;
-    this.logId = `${syncType}`;
+    this.logId = `${syncType}-${nextChainId++}`;
 
     if (this.metrics != null) {
       this.metrics.syncRange.headSyncPeers.addCollect(() => this.scrapeMetrics(this.metrics as Metrics));
@@ -439,8 +443,9 @@ export class SyncChain {
       const res = await wrapError(this.downloadBeaconBlocksByRange(peer, batch.request, partialDownload));
 
       if (!res.err) {
-        const blocks = batch.downloadingSuccess(res.result);
-        if (blocks !== null) {
+        const downloadSuccessOutput = batch.downloadingSuccess(res.result);
+        if (downloadSuccessOutput.status === BatchStatus.AwaitingProcessing) {
+          const blocks = downloadSuccessOutput.blocks;
           let hasPostDenebBlocks = false;
           const blobs = blocks.reduce((acc, blockInput) => {
             hasPostDenebBlocks ||= blockInput.type === BlockInputType.availableData;
@@ -474,7 +479,7 @@ export class SyncChain {
           });
           this.triggerBatchProcessor();
         } else {
-          const pendingDataColumns = res.result.pendingDataColumns?.join(",");
+          const pendingDataColumns = downloadSuccessOutput.pendingDataColumns.join(",");
           this.logger.debug("Partially downloaded batch", {
             id: this.logId,
             ...batch.getMetadata(),
