@@ -18,20 +18,16 @@ jobs:
     runs-on: buildjet-4vcpu-ubuntu-2204
     steps:
       - uses: actions/checkout@v4
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: yarn
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-      - name: Install Yarn
-        run: bun install -g npm:yarn
-      - name: Install
-        run: yarn install --frozen-lockfile
+
+      # Bun uses the yarn lock file to install dependencies
+      # We specify `--linker=hoisted` to mimic to default behavior of `yarn install` for Yarn 1
+      - name: Install deps
+        run: bun install --frozen-lock-file --linker=hoisted
       - name: Build
-        run: yarn build
+        run: bun run --bun build
       - name: Unit Tests
         # These packages are not testable yet in Bun because of `@chainsafe/blst` dependency.
         run: excluded=(beacon-node prover light-client cli); for pkg in packages/*/; do [[ ! " ${excluded[@]} " =~ " $(basename "$pkg") " ]] && echo "Testing $(basename "$pkg")" && (cd "$pkg" && bun run --bun test:unit); done
