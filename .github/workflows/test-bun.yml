@@ -41,7 +41,7 @@ jobs:
       - name: Install Yarn
         run: bun install -g npm:yarn
       - name: Install deps
-        run: bun run --bun yarn install --registry https://registry.npmjs.org/
+        run: bun run --bun yarn -- install --registry https://registry.npmjs.org/
       - name: Build
         run: bun run --bun build
       - name: Unit Tests
