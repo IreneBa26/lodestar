@@ -56,7 +56,7 @@ jobs:
           cat .npmrc
           cat .yarnrc
       - name: Install deps
-        run: bunx --bun yarn install --verbose
+        run: bunx --bun yarn install --verbose --registry https://registry.npmjs.org/ --frozen-lockfile
         env:
           NPM_CONFIG_REGISTRY: https://registry.npmjs.org/
           YARN_REGISTRY: https://registry.npmjs.org/
