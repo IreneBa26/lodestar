@@ -40,10 +40,10 @@ jobs:
       # So have to install Yarn and use it to install and link all workspace dependencies
       - name: Install Yarn
         run: bun install -g npm:yarn
+      - name: Set yarn registry
+        run: yarn config set registry https://registry.npmjs.org/
       - name: Install deps
-        run: |
-          yarn config set registry https://registry.npmjs.org/
-          bun run --bun yarn install
+        run: bun run --bun yarn install
       - name: Build
         run: bun run --bun build
       - name: Unit Tests
