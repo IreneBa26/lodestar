@@ -28,8 +28,9 @@ jobs:
         uses: dcarbone/install-jq-action@v3.2.0
       - name: Update engines with Bun's Node version
         run: |
-          # Get Node version from Bun
-          NODE_VERSION=$(bun -e 'console.log(process.versions.node)')
+          echo "NODE_VERSION=$(bun -e 'console.log(process.versions.node)')" >> "$GITHUB_ENV"
+      - name: Detect node version
+        run: |
           echo "Detected Node version: $NODE_VERSION"
       - name: Update package engine dependency
         run: |
