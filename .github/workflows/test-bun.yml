@@ -43,7 +43,7 @@ jobs:
       - name: Set registry for .yarnc
         run: echo "registry \"https://registry.npmjs.org/\"" > .yarnrc
       - name: Install deps
-        run: bun run --bun yarn 2nstall --registry https://registry.npmjs.org/
+        run: bun run --bun yarn install --registry=https://registry.npmjs.org/
       - name: Build
         run: bun run --bun build
       - name: Unit Tests
