@@ -46,6 +46,8 @@ jobs:
         run: bun run --bun yarn config list
       - name: Install deps
         run: bun run --bun yarn
+        env:
+          NPM_CONFIG_REGISTRY: https://registry.npmjs.org/
       - name: Build
         run: bun run --bun build
       - name: Unit Tests
