@@ -31,10 +31,10 @@ jobs:
           echo "NODE_VERSION=$(bun -e 'console.log(process.versions.node)')" >> "$GITHUB_ENV"
       - name: Update package engine dependency
         run: |
-          jq --arg version ">=$NODE_VERSION" '.engines.node >= $version' package.json > temp.json && mv temp.json package.json
+          jq --arg version ">=$NODE_VERSION" '.engines.node = $version' package.json > temp.json && mv temp.json package.json
       - name: Detect engine version
         run: |
-          cat package.json
+          jq .engines.node package.json
 
       # We are using Yarn 1 for workspaces, that is not compatible with Bun
       # So have to install Yarn and use it to install and link all workspace dependencies
