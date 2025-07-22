@@ -22,10 +22,12 @@ jobs:
         with:
           bun-version: latest
 
-      # Bun uses the yarn lock file to install dependencies
-      # We specify `--linker=hoisted` to mimic to default behavior of `yarn install` for Yarn 1
+      # We are using Yarn 1 for workspaces, that is not compatible with Bun
+      # So have to install Yarn and use it to install and link all workspace dependencies
+      - name: Install Yarn
+        run: bun install -g npm:yarn
       - name: Install deps
-        run: bun install --frozen-lock-file --linker=hoisted
+        run: bun run --bun yarn install
       - name: Build
         run: bun run --bun build
       - name: Unit Tests
