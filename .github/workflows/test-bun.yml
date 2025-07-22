@@ -48,6 +48,7 @@ jobs:
         run: bunx --bun yarn
         env:
           NPM_CONFIG_REGISTRY: https://registry.npmjs.org/
+          YARN_REGISTRY: https://registry.npmjs.org/
       - name: Build
         run: bun run --bun build
       - name: Unit Tests
