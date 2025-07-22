@@ -44,6 +44,17 @@ jobs:
         run: bunx --bun yarn config set registry https://registry.npmjs.org/
       - name: Get yarn config
         run: bunx --bun yarn config list
+      - name: Set .npmrc
+        run: |
+          echo "registry=https://registry.npmjs.org/" > .npmrc
+      - name: Set .yarnc
+        run: |
+          echo "registry=https://registry.npmjs.org/" > .yarnrc
+
+      - name: Check config files
+        run: |
+          cat .npmrc
+          cat .yarnrc
       - name: Install deps
         run: bunx --bun yarn install --verbose
         env:
