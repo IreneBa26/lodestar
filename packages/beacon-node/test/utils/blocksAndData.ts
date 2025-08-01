@@ -12,7 +12,10 @@ import {SignedBeaconBlock, deneb, ssz} from "@lodestar/types";
 import {toRootHex} from "@lodestar/utils";
 import {VersionedHashes} from "../../src/execution/index.js";
 import {computeInclusionProof, kzgCommitmentToVersionedHash} from "../../src/util/blobs.js";
-import {ckzg} from "../../src/util/kzg.js";
+import {ckzg, initCKZG, loadEthereumTrustedSetup} from "../../src/util/kzg.js";
+
+await initCKZG();
+loadEthereumTrustedSetup();
 
 export const CAPELLA_FORK_EPOCH = 0;
 export const DENEB_FORK_EPOCH = 1;
@@ -86,6 +89,17 @@ export function buildParentAndChildBlockTestSet<F extends ForkPostCapella = Fork
   };
 }
 
+function generateRandomBlob(index: number): deneb.Blob {
+  const blob = new Uint8Array(FIELD_ELEMENTS_PER_BLOB * BYTES_PER_FIELD_ELEMENT);
+  const dv = new DataView(blob.buffer, blob.byteOffset, blob.byteLength);
+
+  for (let i = 0; i < FIELD_ELEMENTS_PER_BLOB; i++) {
+    // Generate a unique value based on the index
+    dv.setUint32(i * BYTES_PER_FIELD_ELEMENT, index + i + 1);
+  }
+  return blob;
+}
+
 export function generateBlobSidecars(
   forkName: ForkPostDeneb,
   block: SignedBeaconBlock<ForkPostDeneb>,
@@ -99,7 +113,7 @@ export function generateBlobSidecars(
     const blobSidecar = ssz[forkName].BlobSidecar.defaultValue();
     blobSidecar.index = index;
     blobSidecar.signedBlockHeader = signedBlockHeader;
-    blobSidecar.blob = Uint8Array.from(randomBytes(FIELD_ELEMENTS_PER_BLOB * BYTES_PER_FIELD_ELEMENT));
+    blobSidecar.blob = generateRandomBlob(index);
     blobSidecar.kzgCommitment = ckzg.blobToKzgCommitment(blobSidecar.blob);
     blobSidecar.kzgCommitmentInclusionProof = computeInclusionProof(forkName, block.message.body, index);
     blobSidecar.kzgProof = ckzg.computeBlobKzgProof(blobSidecar.blob, blobSidecar.kzgCommitment);
@@ -157,8 +171,22 @@ export function buildBatchOfBlockWithBlobs<
   let parentRoot = Uint8Array.from(randomBytes(32));
   for (let slot = startSlot; slot < startSlot + count; slot++) {
     const numberOfBlobs = Math.random() * (maxBlobs + 1 - minBlobs) + minBlobs;
-    const blockMaybeBlobs = buildBlockAndBlobsTestSet<F, R>(forkName, numberOfBlobs, slot, parentRoot);
+    let blockMaybeBlobs = buildBlockAndBlobsTestSet<F, R>(
+      forkName,
+      numberOfBlobs,
+      slot,
+      parentRoot
+    ) as BlockAndBlobTestSet<ForkPostDeneb>;
     parentRoot = blockMaybeBlobs.blockRoot;
+    if (isForkPostDeneb(forkName)) {
+      blockMaybeBlobs = {
+        ...blockMaybeBlobs,
+        blobSidecars: blockMaybeBlobs.blobSidecars.map((blobSidecar) => ({
+          ...blobSidecar,
+          blob: new Uint8Array(), // do not OOM by keeping mock
+        })),
+      };
+    }
     blocks.push(blockMaybeBlobs as R);
   }
   return blocks;

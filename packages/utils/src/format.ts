@@ -5,7 +5,7 @@ import {ETH_TO_WEI} from "./ethConversion.js";
  * Format an array for pretty logging
  */
 export function prettyPrintArray(arr: (string | number)[]): string {
-  return `[ ${arr.join(", ")} ]`;
+  return `[${arr.join(",")}]`;
 }
 
 /**
