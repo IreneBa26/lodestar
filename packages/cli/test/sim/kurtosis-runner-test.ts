@@ -1,6 +1,7 @@
 /**
  * This script was generated to test the beacon URLs generated from a Kurtosis enclave
  * checkHealth(), getIdentity() and getSyncing() were inspired by nodeAssertion logic in *.test.ts files
+ * Will be integrated into the main Kurtosis testing framework as migration result
  */
 
 import { KurtosisContext, StarlarkRunConfig} from "kurtosis-sdk";

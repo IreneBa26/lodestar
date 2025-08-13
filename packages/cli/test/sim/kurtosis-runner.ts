@@ -1,3 +1,8 @@
+/**
+ * Initial steps for testing the Kurtosis enclave endpoints logic with kurtosis-sdk (basic)
+ * Will be integrated into the main Kurtosis testing framework as migration result
+ */
+
 import {
     KurtosisContext,
     StarlarkRunConfig
