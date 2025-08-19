@@ -1,4 +1,4 @@
-//Sdvanced version of KurtosisSeriveMap returning a NodeService for more detailled metadata
+//Advanced version of KurtosisServiceMap returning a NodeService for more detailed metadata
 // Basic vs advanced: Different shape of returned service objects
 /*
 * Basic: Map("lodestar_1" => ServiceContext)
