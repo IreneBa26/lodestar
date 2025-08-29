@@ -6,13 +6,13 @@ import {ChainForkConfig} from "@lodestar/config";
 import {LogLevel, Logger} from "@lodestar/logger";
 import {ForkName} from "@lodestar/params";
 import {Epoch, SignedBeaconBlock, Slot} from "@lodestar/types";
+import {ServiceContext} from "kurtosis-sdk";
 import {Web3} from "web3";
 import {BeaconArgs} from "../../../../../src/cmds/beacon/options.js";
 import {IValidatorCliArgs} from "../../../../../src/cmds/validator/options.js";
 import {GlobalArgs} from "../../../../../src/options/index.js";
 import {EpochClock} from "../../epochClock.js";
-import type {KurtosisNetworkConfig, KurtosisServicesMap} from "./kurtosisTypes.js"; //as external import from kurtosisType or declared here as export type?
-
+import {KurtosisNetworkConfig, KurtosisServicesMap} from "../runner/kurtosisTypes.js";
 
 export type NodeId = string;
 
@@ -146,7 +146,7 @@ export interface ExecutionGeneratorOptions<E extends ExecutionClient = Execution
   clientOptions: ExecutionClientsOptions[E];
 }
 
-export type LodestarAPI = ApiClient;
+export type LodestarAPI = ApiClient; //TODO: To be removed?
 export type LighthouseAPI = Omit<ApiClient, "lodestar"> & {
   lighthouse: {
     getPeers(): Promise<{
@@ -179,8 +179,18 @@ export interface BeaconNode<C extends BeaconClient = BeaconClient> {
    * Beacon Node Rest API URL accessible within private network
    */
   readonly restPrivateUrl: string;
-  readonly api: C extends BeaconClient.Lodestar ? LodestarAPI : LighthouseAPI;
+  readonly api: C extends BeaconClient.Lodestar ? LodestarAPI : LighthouseAPI; //🔄 Removed or adjusted-> based on Docker?
   readonly job: Job;
+}
+
+// NEW - Kurtosis-specific BeaconNode
+export interface BeaconNodeKurtosis<C extends BeaconClient = BeaconClient> {
+  readonly client: C;
+  readonly id: string;
+  readonly restPublicUrl: string; //🔄 From Kurtosis?
+  readonly restPrivateUrl: string; //🔄 From Kurtosis?
+  readonly api: C extends BeaconClient.Lodestar ? LodestarAPI : LighthouseAPI;
+  readonly serviceContext: ServiceContext; // ✅ NEW - Kurtosis-native
 }
 
 export interface ValidatorNode<C extends ValidatorClient = ValidatorClient> {
@@ -191,6 +201,15 @@ export interface ValidatorNode<C extends ValidatorClient = ValidatorClient> {
   readonly job: Job;
 }
 
+// NEW - Kurtosis-specific ValidatorNode
+export interface ValidatorNodeKurtosis<C extends ValidatorClient = ValidatorClient> {
+  readonly client: C;
+  readonly id: string;
+  readonly keyManager: KeyManagerApi;
+  readonly keys: ValidatorClientKeys;
+  readonly serviceContext: ServiceContext; // ✅ NEW - Kurtosis-native
+}
+
 export interface ExecutionNode<E extends ExecutionClient = ExecutionClient> {
   readonly client: E;
   readonly id: string;
@@ -198,29 +217,43 @@ export interface ExecutionNode<E extends ExecutionClient = ExecutionClient> {
   /**
    * Engine URL accessible form the host machine if the process is running in private network inside docker
    */
-  readonly engineRpcPublicUrl: string;
+  readonly engineRpcPublicUrl: string; // TODO - Use Kurtosis public URLs?
   /**
    * Engine URL accessible within private network inside docker
    */
-  readonly engineRpcPrivateUrl: string;
+  readonly engineRpcPrivateUrl: string; // TODO - (Is this Docker-specific?)
   /**
    * RPC URL accessible form the host machine if the process is running in private network inside docker
    */
-  readonly ethRpcPublicUrl: string;
+  readonly ethRpcPublicUrl: string; // TODO - Use Kurtosis public URLs?
   /**
    * RPC URL accessible within private network inside docker
    */
-  readonly ethRpcPrivateUrl: string;
+  readonly ethRpcPrivateUrl: string; // TODO - Use Kurtosis private URLs?
   readonly jwtSecretHex: string;
   readonly provider: E extends ExecutionClient.Mock ? null : Web3;
-  readonly job: Job;
+  readonly job: Job; //❌ REMOVE - Docker-specific
+}
+
+// NEW - Kurtosis-specific executionNode
+export interface ExecutionNodeKurtosis<E extends ExecutionClient = ExecutionClient> {
+  readonly client: E;
+  readonly id: string;
+  readonly ttd: bigint;
+  readonly engineRpcPublicUrl: string; //🔄 From Kurtosis?
+  readonly engineRpcPrivateUrl: string; //🔄 From Kurtosis?
+  readonly ethRpcPublicUrl: string; //🔄 From Kurtosis?
+  readonly ethRpcPrivateUrl: string; //🔄 From Kurtosis?
+  readonly jwtSecretHex: string;
+  readonly provider: E extends ExecutionClient.Mock ? null : Web3;
+  readonly serviceContext: ServiceContext; // ✅ NEW - Kurtosis-native
 }
 
 export interface NodePair {
   readonly id: string;
-  readonly beacon: BeaconNode;
-  readonly execution: ExecutionNode;
-  readonly validator?: ValidatorNode;
+  readonly beacon: BeaconNode; //🔄 Will contain Kurtosis ServiceConext reference (e.g., for API calls)
+  readonly execution: ExecutionNode; //🔄 Will contain Kurtosis ServiceConext reference (e.g., for API calls)
+  readonly validator?: ValidatorNode; //🔄 Will contain Kurtosis ServiceConext reference (e.g., for API calls)
 }
 
 export type BeaconNodeGenerator<C extends BeaconClient> = (
@@ -270,17 +303,20 @@ export type JobOptions<T extends RunnerType = RunnerType.ChildProcess | RunnerTy
   [T2 in T]: RunnerOptions[T2] extends never ? {readonly options?: undefined} : {readonly options: RunnerOptions[T2]};
 }[T];
 
+//❌ REMOVE - Docker-specific
 export interface Job {
   id: string;
   start(): Promise<void>;
   stop(): Promise<void>;
 }
 
+//❌ REMOVE - Docker-specific
 export enum RunnerType {
   ChildProcess = "child_process",
   Docker = "docker",
 }
 
+//❌ REMOVE - Docker-specific
 export type RunnerOptions = {
   [RunnerType.ChildProcess]: never;
   [RunnerType.Docker]: {
@@ -302,23 +338,22 @@ export interface IRunner {
 }
 */
 
-// New Kurtosis Runner
-
+//✅ New Kurtosis Runner
 export interface IRunner {
-  //Takes a structured config and instantiates the network
-  create: (config: KurtosisNetworkConfig) => Promise<KurtosisServicesMap>; 
+  // Takes a structured config and instantiates the network
+  create: (config: KurtosisNetworkConfig) => Promise<KurtosisServicesMap>; // ✅ NEW - Kurtosis-native
 
-   //Starts the environment (e.g., enclave)
-  start: (enclaveName: string) => Promise<void>;
+  // Starts the environment (e.g., enclave)
+  start: (enclaveName: string) => Promise<void>; // ✅ NEW - Kurtosis-native
 
-  //Stops or tears down the environment
-  stop: () => Promise<void>; 
-  
-  //Attach listeners for events, such as service start, stop, crash, etc.
-  on(event: RunnerEvent, cb: (id: string) => void | Promise<void>): void; 
+  // Stops or tears down the environment
+  stop: () => Promise<void>;
+
+  // Attach listeners for events, such as service start, stop, crash, etc.
+  on(event: RunnerEvent, cb: (id: string) => void | Promise<void>): void;
 }
 
-
+//❌ REMOVE - Docker-specific
 export interface RunnerEnv<T extends RunnerType> {
   type: T;
   create: (jobOption: Omit<JobOptions<T>, "children">) => Job;

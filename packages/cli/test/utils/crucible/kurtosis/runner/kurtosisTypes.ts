@@ -1,7 +1,5 @@
-//Advanced version of KurtosisServiceMap returning a NodeService for more detailed metadata
-// Basic vs advanced: Different shape of returned service objects
 /*
-* Basic: Map("lodestar_1" => ServiceContext)
+* KurtosisServiceMap returning a NodeService for more detailed metadata
 *
 * Enriched: {
     "lodestar_1": {
@@ -12,9 +10,10 @@
   }
 */
 
-import { ServiceContext } from "kurtosis-sdk";
+import {ServiceContext} from "kurtosis-sdk";
 
 // Core simulation config passed to Kurtosis runner
+// Replicating network config from .YAML file
 export type KurtosisNetworkConfig = {
   participants: Array<{
     el_type: string;
@@ -25,23 +24,26 @@ export type KurtosisNetworkConfig = {
     el_extra_params?: string[];
   }>;
   additional_services?: string[];
-  network_params: Record<string, any>;
+  network_params: Record<string, string | number>;
 };
 
 // Optional enrichment for nodes
+// FIXME: check if boolean is the best way to represent roles
+// Proposed solution: Return a BeaconClient type (i.e. "BeaconClient.Lodestar")
 export type NodeRoles = {
   beacon?: boolean;
   validator?: boolean;
   execution?: boolean;
 };
 
-// Future extensible service wrapper
+// Service abstraction, intended to be adjusted with the correct metadata
+// FIXME: verify which NodeService parameters are actually required vs optional
 export type NodeService = {
   id: string;
   serviceContext: ServiceContext;
   beaconApiUrl?: string;
-  roles?: NodeRoles;
-  metadata?: Record<string, any>;
+  roles?: NodeRoles; // TODO: check if required or optional
+  metadata?: Record<string, string | number>;
 };
 
 // Map of all services (used by test runner and tracker)

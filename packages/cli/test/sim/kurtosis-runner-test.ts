@@ -4,19 +4,19 @@
  * Will be integrated into the main Kurtosis testing framework as migration result
  */
 
-import { KurtosisContext, StarlarkRunConfig} from "kurtosis-sdk";
-import * as fs from 'fs';
-import { parse as parseYAML } from "yaml";
+import * as fs from "node:fs";
+import {KurtosisContext, StarlarkRunConfig} from "kurtosis-sdk";
+import {parse as parseYAML} from "yaml";
 
 // Load args from the multi-fork YAML file
 const enclaveName = "multi-fork-enclave";
-const yamlText = fs.readFileSync('packages/cli/test/sim/multiFork.yml', 'utf8');
+const yamlText = fs.readFileSync("packages/cli/test/sim/multiFork.yml", "utf8");
 const parsed = parseYAML(yamlText);
 const inputArgs = JSON.stringify(parsed);
 
 // Sleep utility for delay-based polling
 
-const sleep = (ms: number) => new Promise(res => setTimeout(res, ms));
+const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
 //---------------------------------------------
 // Helpers for the assertion (use Beacon API endpoints) to match nodeAssertion in Crucible
@@ -24,7 +24,7 @@ const sleep = (ms: number) => new Promise(res => setTimeout(res, ms));
 
 // checkHealth: make sure the CL node is responsive
 async function checkHealth(baseUrl: string) {
-  const r = await fetch(`${baseUrl}/eth/v1/node/health`, { method: "GET" });
+  const r = await fetch(`${baseUrl}/eth/v1/node/health`, {method: "GET"});
   // Lodestar typically returns 200 (healthy) or 206 (syncing but responding)
   if (!(r.status === 200 || r.status === 206)) {
     const text = await r.text().catch(() => "");
@@ -34,7 +34,7 @@ async function checkHealth(baseUrl: string) {
 
 // getIdentity: get the node’s peer ID and metadata
 async function getIdentity(baseUrl: string) {
-  const r = await fetch(`${baseUrl}/eth/v1/node/identity`);
+  const r = await fetch(`${baseUrl}/eth/v1/node/identity`); //
   if (!r.ok) throw new Error(`Identity fetch failed: ${r.status}`);
   return r.json();
 }
@@ -55,7 +55,7 @@ async function getSyncing(baseUrl: string) {
 async function getTiming(
   baseUrl: string,
   pkgRunOutput?: string
-): Promise<{ genesisTime: number; secondsPerSlot: number }> {
+): Promise<{genesisTime: number; secondsPerSlot: number}> {
   // fetched SECONDS_PER_SLOT from /eth/v1/config/spec
   const specResp = await fetch(`${baseUrl}/eth/v1/config/spec`);
   if (!specResp.ok) {
@@ -85,8 +85,8 @@ async function getTiming(
   // Fallback: parse genesis epoch seconds from the Kurtosis package output
   if (!Number.isFinite(genesisTime) && typeof pkgRunOutput === "string") {
     // grab the last 10+ digit number in runOutput (the package prints the genesis epoch seconds)
-    const matches = [...pkgRunOutput.matchAll(/\b(\d{10,})\b/g)].map(m => Number(m[1]));
-    const candidate = matches.length ? matches[matches.length - 1] : undefined;
+    const matches = [...pkgRunOutput.matchAll(/\b(\d{10,})\b/g)].map((m) => Number(m[1]));
+    const candidate = matches.length ? matches.at(-1) : undefined;
     if (Number.isFinite(candidate) && candidate! > 1_600_000_000) {
       genesisTime = candidate!;
     }
@@ -94,26 +94,20 @@ async function getTiming(
 
   if (!Number.isFinite(genesisTime)) {
     throw new Error(
-      `Invalid timing from beacon: genesis_time=undefined, seconds_per_slot=${secondsPerSlot}. ` +
-      `Tried /eth/v1/beacon/genesis and runOutput fallback.`
+      "Invalid timing from beacon: genesis_time=undefined, seconds_per_slot=${secondsPerSlot}. " +
+        "Tried /eth/v1/beacon/genesis and runOutput fallback."
     );
   }
 
-  return { genesisTime: genesisTime!, secondsPerSlot };
+  return {genesisTime: genesisTime!, secondsPerSlot};
 }
-
 
 /**
  * Wait until the wall-clock time when the given slot should exist.
  * Accepts optional pkgRunOutput to use as a fallback source of genesis time.
  */
-async function waitUntilSlotExists(
-  baseUrl: string,
-  slot: number,
-  extraBufferMs = 3000,
-  pkgRunOutput?: string
-) {
-  const { genesisTime, secondsPerSlot } = await getTiming(baseUrl, pkgRunOutput);
+async function waitUntilSlotExists(baseUrl: string, slot: number, extraBufferMs = 3000, pkgRunOutput?: string) {
+  const {genesisTime, secondsPerSlot} = await getTiming(baseUrl, pkgRunOutput);
   const targetMs = (genesisTime + slot * secondsPerSlot) * 1000;
   const now = Date.now();
   const delay = Math.max(0, targetMs - now + extraBufferMs);
@@ -126,12 +120,7 @@ async function waitUntilSlotExists(
  * After the slot should exist, poll /eth/v1/beacon/headers?slot=<slot>
  * until a header is returned.
  */
-async function waitForHeaderAtSlot(
-  baseUrl: string,
-  slot: number,
-  timeoutMs = 60_000,
-  intervalMs = 1_000
-) {
+async function waitForHeaderAtSlot(baseUrl: string, slot: number, timeoutMs = 60_000, intervalMs = 1_000) {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
     try {
@@ -192,7 +181,7 @@ async function main() {
   const services = servicesResult.value;
 
   // Heuristic: beacon (CL) services are prefixed with "cl-" in this package.
-  const beaconServiceNames = [...services.keys()].filter(n => n.startsWith("cl-"));
+  const beaconServiceNames = [...services.keys()].filter((n) => n.startsWith("cl-"));
   if (beaconServiceNames.length === 0) {
     throw new Error("No beacon services discovered (names starting with 'cl-').");
   }
@@ -221,7 +210,6 @@ async function main() {
     // NEW: wait until the slot should exist, based on the node's own timing
     await waitUntilSlotExists(baseUrl, slotToAssert, /*extraBufferMs*/ 3000, run.runOutput as unknown as string);
 
-
     console.log(`🔎 [${name}] Waiting for header at slot=${slotToAssert}...`);
     const header = await waitForHeaderAtSlot(baseUrl, slotToAssert, /*timeoutMs*/ 90_000, /*interval*/ 1_000); // Assert
     console.log(`✅ [${name}] Found header at slot=${slotToAssert}: ${header?.root ?? "(no-root)"}  (CAPTURE)`);
@@ -230,13 +218,13 @@ async function main() {
     const identity = await getIdentity(baseUrl).catch(() => null);
     const syncing = await getSyncing(baseUrl).catch(() => null);
     if (identity) console.log(`📇 [${name}] Identity (CAPTURE): ${JSON.stringify(identity)}`);
-    if (syncing)  console.log(`📊 [${name}] Syncing  (CAPTURE): ${JSON.stringify(syncing)}`);
+    if (syncing) console.log(`📊 [${name}] Syncing  (CAPTURE): ${JSON.stringify(syncing)}`);
   }
 
   console.log("\n✅ Slot=1 node assertions succeeded for all beacon nodes. (REMOVE: run once and done)\n");
 
   // ---------------------------------------------
-  // Log of EL services/ports 
+  // Log of EL services/ports
   // ---------------------------------------------
   for (const [serviceName] of services) {
     const serviceResult = await enclaveContext.getServiceContext(serviceName);
@@ -247,7 +235,7 @@ async function main() {
     console.log("   Private Ports:", service.getPrivatePorts());
   }
 
-  // Clean up the enclave 
+  // Clean up the enclave
   console.log("🧹 Cleaning up the enclave...");
   await kurtosisContext.destroyEnclave(enclaveName);
   console.log("✅ Enclave destroyed");
